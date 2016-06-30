@@ -41,16 +41,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($sponsors as $sponsor){
         $text = '';
         
-        error_log(print_r($sponsor, true));
-        
         ghpp_line('---');
         ghpp_map($sponsor->post_name, 'gid');
         ghpp_map($sponsor->post_title, 'title');
         ghpp_map($sponsor->post_title, 'name');
         ghpp_map($sponsor->meta_sponsor_portal_type, 'type');
         ghpp_map($sponsor->meta_link_sponsor, 'website_url');
-        ghpp_map($sponsor->region, 'jurisdiction');
-        ghpp_map($sponsor->image, 'logo_url');
+        
+        // Do a URL domain remapping
+        if (isset($sponsor->image) && !empty($cfg['to_domain']) && is_array($cfg['from_domains'])){
+            foreach ($cfg['from_domains'] as $fromDomain){
+                $sponsor->image = str_replace($fromDomain, $cfg['to_domain'], $sponsor->image);
+            }
+        }
+        ghpp_map($sponsor->image, 'logo_url', '');
         
         // Check if it's tagged as a sponsor
         if (count($sponsor->national_types) > 0){
@@ -58,18 +62,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ghpp_map($nationalSponsor->name, 'sponsor_level');
             ghpp_map($nationalSponsor->slug, 'sponsor_level_id');
             ghpp_map($nationalSponsor->description, 'sponsor_level_desc');
+            ghpp_map('australia', 'jurisdiction');
         }
         elseif (count($sponsor->state_types) > 0){
             $stateSponsor = $sponsor->state_types[0];
             ghpp_map($stateSponsor->name, 'sponsor_level');
             ghpp_map($stateSponsor->slug, 'sponsor_level_id');
             ghpp_map($stateSponsor->description, 'sponsor_level_desc');
+            ghpp_map($sponsor->region, 'jurisdiction');
         }
         elseif (count($sponsor->local_types) > 0){
             $localSponsor = $sponsor->local_types[0];
             ghpp_map($localSponsor->name, 'sponsor_level');
             ghpp_map($localSponsor->slug, 'sponsor_level_id');
             ghpp_map($localSponsor->description, 'sponsor_level_desc');
+            ghpp_map($sponsor->region, 'jurisdiction');
         }
         
         if (isset($sponsor->locations) && is_array($sponsor->locations)){
